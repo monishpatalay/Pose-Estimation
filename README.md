@@ -17,7 +17,7 @@ The project exists in two forms:
 Both implementations run the same algorithm; only the runtime differs.
 
 1. **Pose detection** — Every video frame is run through MediaPipe's Pose model, which returns 33 normalized body landmarks (`x, y, z, visibility`) per detected person.
-2. **Angle calculation** — The left shoulder, elbow, and wrist landmarks are fed into an angle function based on `atan2`:
+2. **Angle calculation** — The shoulder, elbow, and wrist landmarks for an arm are fed into an angle function based on `atan2`:
 
    ```
    angle = |atan2(wrist.y - elbow.y, wrist.x - elbow.x)
@@ -34,7 +34,9 @@ Both implementations run the same algorithm; only the runtime differs.
    Requiring the `"down"` stage before counting an `"up"` prevents double-counting small wobbles at the top of the curl — a rep only counts once the arm has gone through a full range of motion.
 4. **Render** — The skeleton (all 33 landmarks + connective edges) is drawn over the video feed, along with the live rep count, current stage, and angle.
 
-This logic lives in exactly one place per runtime: the notebook's `calculate_angle()` + curl-counter cell, and the web app's [`src/lib/angle.ts`](web/src/lib/angle.ts) + [`src/hooks/useRepCounter.ts`](web/src/hooks/useRepCounter.ts) — both are intentionally line-for-line equivalent so behavior stays identical across the two implementations.
+This logic lives in exactly one place per runtime: the notebook's `calculate_angle()` + curl-counter cell, and the web app's [`src/lib/angle.ts`](web/src/lib/angle.ts) + [`src/hooks/useRepCounter.ts`](web/src/hooks/useRepCounter.ts) — the angle formula and stage thresholds are intentionally line-for-line equivalent so behavior stays identical across the two implementations.
+
+One deliberate enhancement in the web app: the notebook only ever reads the *left* arm's landmarks. The web app runs the identical state machine independently for **both arms** (`left`/`right` in `useRepCounter.ts`), each with its own stage and counter, so it works regardless of which arm — or both — you curl with.
 
 ## Web App Architecture
 
@@ -73,7 +75,7 @@ No frame, landmark, or rep count ever leaves the tab.
 |---|---|---|
 | Camera access + permission states | [`hooks/useWebcam.ts`](web/src/hooks/useWebcam.ts) | Exposes `idle / requesting / ready / denied / no-camera / error` so the UI can give explicit feedback — this link gets opened cold by strangers |
 | Pose model loading + detection loop | [`hooks/usePoseLandmarker.ts`](web/src/hooks/usePoseLandmarker.ts) | Loads the WASM runtime + a **self-hosted** model asset (`public/models/pose_landmarker_lite.task`), then drives `detectForVideo` off `requestAnimationFrame` |
-| Rep-counting state machine | [`hooks/useRepCounter.ts`](web/src/hooks/useRepCounter.ts) | Direct port of the notebook's angle + stage logic |
+| Rep-counting state machine | [`hooks/useRepCounter.ts`](web/src/hooks/useRepCounter.ts) | Notebook's angle + stage logic, run independently for left and right arms |
 | Skeleton overlay | [`components/tracker/PoseCanvas.tsx`](web/src/components/tracker/PoseCanvas.tsx) | Imperative `draw()` handle so the ~30–60fps loop paints directly to canvas without going through React state on every frame |
 | Stats HUD | [`components/tracker/StatsHud.tsx`](web/src/components/tracker/StatsHud.tsx) | shadcn `Card` + GSAP pop animation on each rep increment |
 
