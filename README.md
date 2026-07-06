@@ -42,18 +42,18 @@ The web app is a **fully static, client-side** application — there is no backe
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Browser (visitor's machine)                                 │
-│                                                                │
-│   getUserMedia ──▶ <video>                                    │
-│                       │                                       │
-│                       ▼                                       │
-│           MediaPipe PoseLandmarker (WASM, on-device)           │
-│                       │                                       │
-│                       ▼                                       │
+│  Browser (visitor's machine)                                │
+│                                                             │
+│   getUserMedia ──▶ <video>                                  │
+│                       │                                     │
+│                       ▼                                     │
+│           MediaPipe PoseLandmarker (WASM, on-device)        │
+│                       │                                     │
+│                       ▼                                     │
 │      33 landmarks ──▶ angle.ts ──▶ useRepCounter state machine │
-│                       │                                       │
-│                       ▼                                       │
-│        <canvas> skeleton overlay + shadcn/ui stats HUD          │
+│                       │                                     │
+│                       ▼                                     │
+│        <canvas> skeleton overlay + shadcn/ui stats HUD      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
