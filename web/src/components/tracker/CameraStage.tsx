@@ -16,7 +16,7 @@ interface CameraStageProps {
 export function CameraStage({ onExit }: CameraStageProps) {
   const { videoRef, status: webcamStatus, start, stop } = useWebcam();
   const canvasApiRef = useRef<PoseCanvasHandle | null>(null);
-  const { counter, stage, angle, visible, processResult, reset } = useRepCounter();
+  const { left, right, processResult, reset } = useRepCounter();
 
   const handleResult = useCallback(
     (result: PoseLandmarkerResult) => {
@@ -60,7 +60,7 @@ export function CameraStage({ onExit }: CameraStageProps) {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 pb-10">
-        <div className="relative aspect-[4/3] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:aspect-video">
+        <div className="relative aspect-4/3 w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl sm:aspect-video">
           <div className="absolute inset-0 -scale-x-100">
             <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
             <PoseCanvas ref={canvasApiRef} videoRef={videoRef} />
@@ -82,7 +82,7 @@ export function CameraStage({ onExit }: CameraStageProps) {
           )}
         </div>
 
-        {!showGate && <StatsHud counter={counter} stage={stage} angle={angle} visible={visible} />}
+        {!showGate && <StatsHud left={left} right={right} />}
       </main>
     </div>
   );

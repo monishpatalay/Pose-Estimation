@@ -2,85 +2,101 @@ import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { CurlStage } from '@/hooks/useRepCounter';
+import type { ArmState } from '@/hooks/useRepCounter';
 
 interface StatsHudProps {
-  counter: number;
-  stage: CurlStage;
-  angle: number | null;
-  visible: boolean;
+  left: ArmState;
+  right: ArmState;
 }
 
-export function StatsHud({ counter, stage, angle, visible }: StatsHudProps) {
-  const counterRef = useRef<HTMLDivElement | null>(null);
-  const prevCounterRef = useRef(counter);
+export function StatsHud({ left, right }: StatsHudProps) {
+  const total = left.counter + right.counter;
+  const totalRef = useRef<HTMLDivElement | null>(null);
+  const prevTotalRef = useRef(total);
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (counter !== prevCounterRef.current && counterRef.current && !prefersReducedMotion) {
-      gsap.fromTo(
-        counterRef.current,
-        { scale: 1.35 },
-        { scale: 1, duration: 0.4, ease: 'back.out(3)' },
-      );
+    if (total !== prevTotalRef.current && totalRef.current && !prefersReducedMotion) {
+      gsap.fromTo(totalRef.current, { scale: 1.35 }, { scale: 1, duration: 0.4, ease: 'back.out(3)' });
     }
-    prevCounterRef.current = counter;
-  }, [counter]);
+    prevTotalRef.current = total;
+  }, [total]);
 
-  const stageColor =
-    stage === 'up' ? 'var(--stage-up)' : stage === 'down' ? 'var(--stage-down)' : 'var(--muted)';
+  const bothHidden = !left.visible && !right.visible;
+  const onlyOneHidden = !bothHidden && (!left.visible || !right.visible);
 
   return (
     <Card className="gap-0 border-white/10 bg-card/90 py-0 shadow-xl backdrop-blur-sm">
       <CardContent className="flex items-center gap-6 px-6 py-5">
-        <Stat label="Reps">
+        <ArmColumn label="Left arm" arm={left} />
+
+        <div className="h-14 w-px bg-border" aria-hidden="true" />
+
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+            Total
+          </span>
           <div
-            ref={counterRef}
+            ref={totalRef}
             className="font-display text-5xl leading-none font-semibold tabular-nums"
           >
-            {counter}
+            {total}
           </div>
-        </Stat>
+        </div>
 
-        <div className="h-10 w-px bg-border" aria-hidden="true" />
+        <div className="h-14 w-px bg-border" aria-hidden="true" />
 
-        <Stat label="Stage">
-          <Badge
-            className="border-none px-3 py-1 font-display text-base uppercase"
-            style={{
-              backgroundColor: stageColor,
-              color: stage ? '#fff' : 'var(--muted-foreground)',
-            }}
-          >
-            {stage ?? '—'}
-          </Badge>
-        </Stat>
-
-        <div className="h-10 w-px bg-border" aria-hidden="true" />
-
-        <Stat label="Angle">
-          <div className="font-display text-2xl leading-none font-medium tabular-nums">
-            {angle !== null ? `${Math.round(angle)}°` : '—'}
-          </div>
-        </Stat>
+        <ArmColumn label="Right arm" arm={right} />
       </CardContent>
 
-      {!visible && (
+      {(bothHidden || onlyOneHidden) && (
         <CardContent className="border-t border-border px-6 py-3 text-center text-sm text-muted-foreground">
-          Step into frame and raise your left arm so it's fully visible.
+          {bothHidden
+            ? "Step into frame — make sure at least one arm is fully visible."
+            : `Raise your ${!left.visible ? 'left' : 'right'} arm so it's fully visible too.`}
         </CardContent>
       )}
     </Card>
   );
 }
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+function ArmColumn({ label, arm }: { label: string; arm: ArmState }) {
+  const counterRef = useRef<HTMLDivElement | null>(null);
+  const prevCounterRef = useRef(arm.counter);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (arm.counter !== prevCounterRef.current && counterRef.current && !prefersReducedMotion) {
+      gsap.fromTo(counterRef.current, { scale: 1.35 }, { scale: 1, duration: 0.4, ease: 'back.out(3)' });
+    }
+    prevCounterRef.current = arm.counter;
+  }, [arm.counter]);
+
+  const stageColor =
+    arm.stage === 'up' ? 'var(--stage-up)' : arm.stage === 'down' ? 'var(--stage-down)' : 'var(--muted)';
+
   return (
     <div className="flex flex-col items-center gap-1.5">
       <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
         {label}
       </span>
-      {children}
+      <div ref={counterRef} className="font-display text-3xl leading-none font-semibold tabular-nums">
+        {arm.counter}
+      </div>
+      <div className="flex items-center gap-2">
+        <Badge
+          className="border-none px-2 py-0.5 font-display text-xs uppercase"
+          style={{
+            backgroundColor: stageColor,
+            color: arm.stage ? '#fff' : 'var(--muted-foreground)',
+          }}
+        >
+          {arm.stage ?? '—'}
+        </Badge>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {arm.angle !== null ? `${Math.round(arm.angle)}°` : '—'}
+        </span>
+      </div>
     </div>
   );
 }
